@@ -1,7 +1,22 @@
 import axios from 'axios'
 
+// Determina a URL base da API
+// Em dev local: usa proxy do Vite (/api/v1)
+// Em producao: usa VITE_API_URL ou fallback para localhost
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  // Em desenvolvimento local, usa o proxy do Vite
+  if (import.meta.env.DEV) {
+    return '/api/v1'
+  }
+  // Fallback para localhost (nao funciona em GitHub Pages sem backend)
+  return 'http://localhost:8000/api/v1'
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: getBaseURL(),
   timeout: 120000, // 2 minutes for long operations
   headers: {
     'Content-Type': 'application/json'

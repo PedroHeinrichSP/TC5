@@ -1,5 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+
+// Usar hash history para GitHub Pages (evita 404 em refresh)
+const isGitHubPages = import.meta.env.VITE_GITHUB_PAGES === 'true'
 
 const routes = [
   {
@@ -38,7 +41,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: isGitHubPages ? createWebHashHistory() : createWebHistory(),
   routes
 })
 

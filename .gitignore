@@ -1,2 +1,28 @@
-.github/
+# Arquivos de ambiente
 .env
+.env.local
+.env.*.local
+
+# Dependencias
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Build
+frontend/dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporarios
+tmp/
+.tmp/
