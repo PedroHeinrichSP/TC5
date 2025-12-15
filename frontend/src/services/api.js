@@ -1,9 +1,11 @@
 import axios from 'axios'
 
+// URL do backend no Render
+const RENDER_API_URL = 'https://questgen-backend.onrender.com/api/v1'
+
 // Determina a URL base da API
-// Em dev local: usa proxy do Vite (/api/v1)
-// Em producao: usa VITE_API_URL ou fallback para localhost
 const getBaseURL = () => {
+  // Se tiver variavel de ambiente, usa ela
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL
   }
@@ -11,8 +13,8 @@ const getBaseURL = () => {
   if (import.meta.env.DEV) {
     return '/api/v1'
   }
-  // Fallback para localhost (nao funciona em GitHub Pages sem backend)
-  return 'http://localhost:8000/api/v1'
+  // Em producao (GitHub Pages), usa o backend do Render
+  return RENDER_API_URL
 }
 
 const api = axios.create({
