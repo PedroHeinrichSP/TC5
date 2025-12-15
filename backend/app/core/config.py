@@ -1,22 +1,31 @@
 """
 Configurações centralizadas do sistema
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
+    # Configuração do Pydantic Settings
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore"
+    )
+    
     # App
-    app_name: str = "Gerador de Questões Acadêmicas"
+    app_name: str = "Gerador de Questoes Academicas"
     app_env: str = "development"
     debug: bool = True
     secret_key: str = "change-me-in-production"
     
-    # Database
+    # Database - aceita DATABASE_URL do ambiente
     database_url: str = "postgresql://questgen_user:questgen_pass@localhost:5432/questgen_db"
     
-    # Redis
+    # Redis (opcional)
     redis_url: str = "redis://localhost:6379/0"
     
     # AI Providers
@@ -58,10 +67,6 @@ class Settings(BaseSettings):
     @property
     def max_file_size_bytes(self) -> int:
         return self.max_file_size_mb * 1024 * 1024
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 @lru_cache()

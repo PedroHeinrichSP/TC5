@@ -35,9 +35,18 @@ logger = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Gerencia ciclo de vida da aplicação"""
+    """Gerencia ciclo de vida da aplicacao"""
     # Startup
     logger.info("application_starting", app_name=settings.app_name)
+    
+    # Log da URL do banco (sem senha)
+    db_url = settings.database_url
+    if "@" in db_url:
+        # Oculta a senha no log
+        safe_url = db_url.split("@")[0].rsplit(":", 1)[0] + ":***@" + db_url.split("@")[1]
+    else:
+        safe_url = db_url
+    logger.info("database_connecting", url=safe_url)
     
     # Cria tabelas do banco de dados
     Base.metadata.create_all(bind=engine)
