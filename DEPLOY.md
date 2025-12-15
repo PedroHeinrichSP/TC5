@@ -1,147 +1,165 @@
 # Guia de Deploy - QuestGen AI
 
-## Deploy do Frontend (GitHub Pages)
+## Arquitetura de Deploy
 
-### Passo 1: Habilitar GitHub Pages
-
-1. Va para o repositorio no GitHub
-2. Clique em **Settings** > **Pages**
-3. Em "Build and deployment", selecione:
-   - **Source**: GitHub Actions
-4. Salve
-
-### Passo 2: Executar o Deploy
-
-O deploy e automatico quando voce faz push para a branch `main` com mudancas na pasta `frontend/`.
-
-Para executar manualmente:
-1. Va em **Actions** no GitHub
-2. Selecione "Deploy Frontend to GitHub Pages"
-3. Clique em "Run workflow"
-
-### Passo 3: Acessar o Site
-
-Apos o deploy, acesse:
 ```
-https://PedroHeinrichSP.github.io/TC5/
+[GitHub Pages]          [Render.com]
+   Frontend    <---->    Backend + PostgreSQL
+   (Gratuito)            (Gratuito)
 ```
 
 ---
 
-## Limitacoes do GitHub Pages
+## PARTE 1: Deploy do Backend (Render.com)
 
-O GitHub Pages hospeda apenas arquivos estaticos. O frontend funcionara, mas:
+### Passo 1: Criar Conta no Render
 
-- **Sem backend**: Autenticacao, upload e geracao de questoes NAO funcionarao
-- **Apenas demonstracao visual**: Util para mostrar a interface
+1. Acesse https://render.com
+2. Clique em "Get Started for Free"
+3. Faca login com sua conta GitHub
 
-Para funcionalidade completa, voce precisa hospedar o backend.
+### Passo 2: Criar o Banco de Dados PostgreSQL
 
----
+1. No dashboard do Render, clique em **"New +"** > **"PostgreSQL"**
+2. Configure:
+   - **Name**: `questgen-db`
+   - **Database**: `questgen`
+   - **User**: `questgen_user`
+   - **Region**: Ohio (ou mais proximo)
+   - **Plan**: **Free**
+3. Clique em **"Create Database"**
+4. Aguarde criar e **copie a "External Database URL"** (vai precisar depois)
 
-## Deploy Completo (Frontend + Backend)
+### Passo 3: Criar o Web Service (Backend)
 
-### Opcao 1: Railway (Recomendado - Gratuito)
-
-#### Backend no Railway
-
-1. Crie uma conta em https://railway.app
-2. Clique em "New Project" > "Deploy from GitHub repo"
-3. Selecione o repositorio TC5
-4. Configure:
-   - **Root Directory**: `backend`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-
-5. Adicione as variaveis de ambiente:
-   ```
-   SECRET_KEY=sua-chave-secreta
-   JWT_SECRET_KEY=jwt-secret
-   DATABASE_URL=(Railway fornece automaticamente com Postgres)
-   REDIS_URL=(Railway fornece automaticamente com Redis)
-   GOOGLE_API_KEY=sua-chave-gemini
-   AI_PROVIDER=gemini
-   ```
-
-6. Adicione Postgres e Redis como servicos
-7. Copie a URL do backend (ex: `https://tc5-backend.railway.app`)
-
-#### Frontend no GitHub Pages
-
-1. Va em **Settings** > **Secrets and variables** > **Actions** > **Variables**
-2. Crie a variavel `VITE_API_URL` com valor: `https://tc5-backend.railway.app/api/v1`
-3. Execute o workflow novamente
-
-### Opcao 2: Render (Gratuito com limites)
-
-#### Backend no Render
-
-1. Crie uma conta em https://render.com
-2. New > Web Service > Connect GitHub
+1. Clique em **"New +"** > **"Web Service"**
+2. Conecte seu repositorio GitHub (PedroHeinrichSP/TC5)
 3. Configure:
+   - **Name**: `questgen-backend`
+   - **Region**: Ohio (mesma do banco)
+   - **Branch**: `main`
    - **Root Directory**: `backend`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Runtime**: `Docker`
+   - **Dockerfile Path**: `./Dockerfile.render`
+   - **Plan**: **Free**
 
-4. Adicione variaveis de ambiente (mesmo do Railway)
-5. Adicione Postgres (Render oferece gratuito por 90 dias)
+4. Adicione as **Environment Variables**:
 
-### Opcao 3: Fly.io (Gratuito com limites)
+   | Key | Value |
+   |-----|-------|
+   | `DATABASE_URL` | (cole a External Database URL do passo anterior) |
+   | `SECRET_KEY` | (clique em "Generate" para gerar automaticamente) |
+   | `JWT_SECRET_KEY` | (clique em "Generate" para gerar automaticamente) |
+   | `GOOGLE_API_KEY` | (sua chave da API Gemini) |
+   | `AI_PROVIDER` | `gemini` |
+   | `DEBUG` | `false` |
+   | `PYTHONPATH` | `/app` |
+
+5. Clique em **"Create Web Service"**
+
+### Passo 4: Aguardar Deploy
+
+- O primeiro deploy leva 5-10 minutos
+- Quando aparecer "Live", copie a URL (ex: `https://questgen-backend.onrender.com`)
+
+### Passo 5: Testar o Backend
 
 ```bash
-# Instale o CLI
-curl -L https://fly.io/install.sh | sh
-
-# Login
-fly auth login
-
-# Deploy backend
-cd backend
-fly launch
-fly secrets set SECRET_KEY=sua-chave GOOGLE_API_KEY=sua-chave
-fly deploy
+curl https://questgen-backend.onrender.com/health
 ```
+
+Deve retornar: `{"status": "healthy"}`
 
 ---
 
-## Configuracao de CORS
+## PARTE 2: Configurar Frontend para usar o Backend
 
-Se hospedar o backend em outro dominio, adicione o dominio do frontend ao CORS.
+### Passo 1: Adicionar Variavel no GitHub
 
-No arquivo `backend/app/main.py`, atualize:
+1. Va para: https://github.com/PedroHeinrichSP/TC5/settings/variables/actions
+2. Clique em **"New repository variable"**
+3. Configure:
+   - **Name**: `VITE_API_URL`
+   - **Value**: `https://questgen-backend.onrender.com/api/v1`
+   (substitua pela URL real do seu backend)
+4. Clique em **"Add variable"**
 
-```python
-origins = [
-    "http://localhost:3000",
-    "http://localhost",
-    "https://PedroHeinrichSP.github.io",  # GitHub Pages
-    "https://seu-dominio.com",  # Seu dominio personalizado
-]
-```
+### Passo 2: Re-executar o Deploy do Frontend
+
+1. Va para: https://github.com/PedroHeinrichSP/TC5/actions
+2. Clique em **"Deploy Frontend to GitHub Pages"**
+3. Clique em **"Run workflow"** > **"Run workflow"**
+
+### Passo 3: Testar
+
+Acesse: https://PedroHeinrichSP.github.io/TC5/
+
+Agora deve funcionar completamente!
 
 ---
 
-## Checklist de Deploy
+## Resumo das URLs
 
-- [ ] Backend hospedado e funcionando
-- [ ] Banco de dados PostgreSQL configurado
-- [ ] Redis configurado (opcional, para cache)
-- [ ] Variavel VITE_API_URL configurada no GitHub
-- [ ] CORS configurado para aceitar o dominio do frontend
-- [ ] Chave da API Gemini/OpenAI configurada
-- [ ] Testar: registro, login, upload, geracao, export
+| Servico | URL |
+|---------|-----|
+| Frontend | https://PedroHeinrichSP.github.io/TC5/ |
+| Backend | https://questgen-backend.onrender.com |
+| API | https://questgen-backend.onrender.com/api/v1 |
+
+---
+
+## Obter Chave da API Gemini (Gratuita)
+
+1. Acesse: https://makersuite.google.com/app/apikey
+2. Faca login com conta Google
+3. Clique em **"Create API Key"**
+4. Copie a chave gerada
+5. Use no campo `GOOGLE_API_KEY` do Render
+
+---
+
+## Limitacoes do Plano Gratuito
+
+### Render Free Tier:
+- Backend "dorme" apos 15 min de inatividade
+- Primeira requisicao apos "dormir" leva ~30 segundos
+- 750 horas/mes de execucao
+- Banco PostgreSQL: 1GB, expira em 90 dias
+
+### GitHub Pages:
+- Totalmente gratuito para repositorios publicos
+- Sem limitacoes significativas
 
 ---
 
 ## Troubleshooting
 
+### Backend demora para responder
+Normal no plano gratuito. O servico "acorda" apos inatividade.
+
 ### Erro de CORS
-Verifique se a URL do frontend esta na lista de origens permitidas no backend.
+Verifique se a URL do GitHub Pages esta nas origens permitidas.
+O arquivo `backend/app/core/config.py` ja inclui `https://PedroHeinrichSP.github.io`.
 
-### 404 no Refresh
-O frontend usa hash history (`/#/`) para evitar isso no GitHub Pages.
+### Erro 500 no backend
+Verifique os logs no Render: Dashboard > questgen-backend > Logs
 
-### API nao responde
-Verifique se a variavel `VITE_API_URL` esta correta e o backend esta rodando.
+### Banco de dados expirou
+No plano free, o PostgreSQL expira em 90 dias. Crie um novo e atualize DATABASE_URL.
 
-### Erro de autenticacao
-Verifique se `SECRET_KEY` e `JWT_SECRET_KEY` estao configuradas no backend.
+---
+
+## Alternativas de Hospedagem
+
+### Railway.app
+- Mais rapido que Render
+- $5 de credito gratuito/mes
+- Nao "dorme"
+
+### Fly.io
+- 3 VMs gratuitas
+- Mais complexo de configurar
+
+### Vercel (apenas frontend)
+- Excelente para frontend
+- Nao suporta backend Python
