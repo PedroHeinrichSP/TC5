@@ -84,13 +84,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configura CORS
+# Configura CORS - IMPORTANTE: deve vir antes das rotas
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["*"],  # Temporariamente permite todas as origens para debug
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 

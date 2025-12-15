@@ -49,8 +49,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
     
-    # CORS - inclui GitHub Pages
-    cors_origins: str = "http://localhost,http://localhost:80,http://localhost:3000,http://localhost:8080,http://127.0.0.1,https://PedroHeinrichSP.github.io"
+    # CORS - inclui GitHub Pages e Render
+    cors_origins: str = "http://localhost,http://localhost:80,http://localhost:3000,http://localhost:8080,http://127.0.0.1,https://PedroHeinrichSP.github.io,https://pedroheinrichsp.github.io,https://questgen-backend.onrender.com"
     
     # Open Data Portal
     open_data_api_url: str = "https://dadosabertos.camara.leg.br/api/v2"
