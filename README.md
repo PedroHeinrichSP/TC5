@@ -24,7 +24,7 @@ Sistema para geracao automatica de questoes academicas a partir de documentos PD
 
 1. **Clone o repositorio**
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/PedroHeinrichSP/TC5.git
 cd TC5
 ```
 
